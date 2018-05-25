@@ -6,32 +6,61 @@ use duzun\hQuery;
 use Carbon\Carbon;
 use GuzzleHttp\Client as Guzzle;
 
-
 class NewsParser
 {
+    private $item;
+    private $link;
+    private $id;
+
+
+    /**
+     * Set item
+     *
+     * @param $item
+     */
+    public function setItem($item)
+    {
+        $this->item = $item;
+    }
+
+    /**
+     * Prepare data for database
+     *
+     * @return array
+     */
+    public function prepareData()
+    {
+        $news_id = $this->getNewsId(); // get id of news
+        $link = $this->getLink(); // get link
+        $date = $this->getDate(); // get date
+        $title = $this->getTitle(); // get title
+        $tags = $this->getTags(); // get tags
+        $views = $this->getViews();  // get views*/
+
+        $newsData = compact('news_id', 'title', 'link', 'tags', 'date', 'views');
+        return $newsData;
+    }
 
     /**
      * Get id of the news
      *
-     * @param $item
      * @return mixed
      */
-    public function getNewsId($item)
+    private function getNewsId()
     {
-        $news = explode('_', $item->find(' .views ')->attr('id'));
-
-        return $news[5];
+        $news = explode('_', $this->item->find(' .views ')->attr('id'));
+        $this->id = $news[5];
+        
+        return $this->id;
     }
-
 
     /**
      * Get date
      * Check and update format of date.
      *
-     * @param $item
      * @return array|bool|mixed|string
      */
-    public function getDate($item)
+    private function getDate()
     {
         $months = [
             'Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Августа', 'Сентября', 'Октября', 'Ноября', 'Декабря', 'Сегодня', 'Вчера',
@@ -41,7 +70,7 @@ class NewsParser
             '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', Carbon::now()->toDateString(), Carbon::yesterday()->toDateString(),
         ];
 
-        $date = explode(',', $item->find('.date'));
+        $date = explode(',', $this->item->find('.date'));
 
         /**
          * Check and update format of date.
@@ -76,41 +105,35 @@ class NewsParser
         return $date;
     }
 
-
     /**
      * Get title of the news
      *
-     * @param $item
      * @return mixed
      */
-    public function getTitle($item)
+    private function getTitle()
     {
-        return $item->find('.description h3')->text();
-
+        return $this->item->find('.description h3')->text();
     }
-
 
     /**
      * Get link of the news
      *
-     * @param $item
      * @return mixed
      */
-    public function getLink($item)
+    private function getLink()
     {
-        return $item->find('a')->attr('href');
+        $this->link = $this->item->find('a')->attr('href');
+        return $this->link;
     }
-
 
     /**
      * Get tags of the news
      *
-     * @param $link
      * @return array|string
      */
-    public function getTags($link)
+    private function getTags()
     {
-        $doc = \hQuery::fromUrl($link, ['Accept' => 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8']);
+        $doc = \hQuery::fromUrl($this->link, ['Accept' => 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8']);
 
         // Get tags
         $tags = trim($doc->find('div.tag ')->text());
@@ -122,15 +145,14 @@ class NewsParser
         return $tags;
     }
 
-
     /**
      * Get count views of the news
      *
-     * @param $id
      * @return mixed
      */
-    public function getViews($id)
+    private function getViews()
     {
+        $id = $this->id;
         $news = "https://www.segodnya.ua/exec/ajax/sunsite.php?article=$id&articles[$id]=$id";
 
         $guzzle = new Guzzle();

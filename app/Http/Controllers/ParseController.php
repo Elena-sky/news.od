@@ -7,11 +7,22 @@ use Illuminate\Http\Request;
 
 class ParseController extends Controller
 {
+    private $rNews;
+
+    public function __construct(rNews $rNews)
+    {
+        $this->rNews = $rNews;
+    }
 
     public function index(rNews $parsing)
     {
-        $parsing->parserAction();
+        $check = $this->rNews->check();
 
-        return view('index');
+        if(!$check){
+            $parsing->parserStart();
+        }
+        $content = $this->rNews->getNews();
+
+        return view('index', compact('content'));
     }
 }
