@@ -51,6 +51,11 @@ class NewsRepository
      */
     public function parserStart()
     {
+        // Delete old articles
+        if($this->check()){
+            News::truncate();
+        }
+
         $this->parserAction($this->start, $this->end);
     }
 
